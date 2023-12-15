@@ -1,11 +1,10 @@
-import java.util.Arrays;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.Stack;
 
-// Press Shift twice to open the Search Everywhere dialog and type `show whitespaces`,
-// then press Enter. You can now see whitespace characters in your code.
+
 public class Main {
     private static boolean isMathOperator(char c) {
-
         return c == '+' || c == '-' || c == '*' || c == '/';
     }
     private static int evaluatePrefixExpression(Stack<String> prefixStack) {
@@ -14,21 +13,15 @@ public class Main {
         while (!prefixStack.isEmpty()) {
             String token = prefixStack.pop();
 
-            // If the token is an operand, push its integer value onto the operand stack
             if (isOperand(token)) {
                 operandStack.push(Integer.parseInt(token));
-            } else { // If the token is an operator
-                // Pop two operands from the operand stack
+            } else {
                 int operand1 = operandStack.pop();
                 int operand2 = operandStack.pop();
-
-                // Apply the operator and push the result back onto the operand stack
                 int result = applyOperator(token, operand1, operand2);
                 operandStack.push(result);
             }
         }
-
-        // The final result is on the top of the operand stack
         return operandStack.pop();
     }
 
@@ -38,48 +31,48 @@ public class Main {
     }
 
     private static int applyOperator(String operator, int operand1, int operand2) {
-        switch (operator) {
-            case "+":
-                return operand1 + operand2;
-            case "-":
-                return operand1 - operand2;
-            case "*":
-                return operand1 * operand2;
-            case "/":
-                return operand1 / operand2;
-            default:
-                throw new IllegalArgumentException("Invalid operator: " + operator);
-        }
+        return switch (operator) {
+            case "+" -> operand1 + operand2;
+            case "-" -> operand1 - operand2;
+            case "*" -> operand1 * operand2;
+            case "/" -> operand1 / operand2;
+            default -> 0;
+        };
     }
+    private static String convertToInfixExpression(Stack<String> prefixStack) {
+        Stack<String> infixStack = new Stack<>();
+
+        while (!prefixStack.isEmpty()) {
+            String token = prefixStack.pop();
+
+            if (isOperand(token)) {
+                infixStack.push(token);
+            } else if (isMathOperator(token.charAt(0))) {
+                String operand1 = infixStack.pop();
+                String operand2 = infixStack.pop();
+                String infixExpression = "(" + operand1 + token + operand2 + ")";
+                infixStack.push(infixExpression);
+            }
+        }
+
+        return infixStack.pop();
+    }
+    private static String readXmlFromFile(String filePath) {
+        StringBuilder xmlContent = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                xmlContent.append(line).append("\n");
+            }
+        } catch (Exception ignored) {
+
+        }
+        return xmlContent.toString();
+    }
+
     public static void main(String[] args) {
-        String xml_string =  """
-                <expr type="binary">
-    <operator value="+"/>
-    <expr type="binary">
-        <operator value="*"/>
-        <expr type="atom">
-            <atom value="3"/>
-        </expr>
-        <expr type="binary">
-            <operator value="+"/>
-            <expr type="atom">
-                <atom value="5"/>
-            </expr>
-            <expr type="atom">
-                <atom value="4"/>
-            </expr>
-        </expr>
-    </expr>
-    <expr type="binary">
-        <operator value="*"/>
-        <expr type="atom">
-            <atom value="9"/>
-        </expr>
-        <expr type="atom">
-            <atom value="8"/>
-        </expr>
-    </expr>
-</expr>""";
+        String xml_string = readXmlFromFile("src/file.xml");
+
         String[] lines_array=xml_string.split("\\n");
         Stack<String> linestack = new Stack<String>();
         for (String element: lines_array
@@ -103,10 +96,12 @@ public class Main {
         for (int i = 0;i<linestack.toArray().length;i++){
             stb.append(linestack.toArray()[i]);
         }
+
         System.out.print("Prefix Expression: ");
         System.out.println(stb.toString());
-
-
+        String infixExpression = convertToInfixExpression((Stack<String>) linestack.clone());
+        System.out.print("Infix Expression: ");
+        System.out.println(infixExpression);
         System.out.println(evaluatePrefixExpression(linestack));
 
     }
